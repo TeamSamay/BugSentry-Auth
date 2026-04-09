@@ -1,3 +1,3 @@
 """
-Sanjeevani Auth Service - Package Init
+BugSentry Auth Service - Package Init
 """

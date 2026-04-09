@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME = "sanjeevani_auth"
+DB_NAME = "bugsentry_auth"
 
 async def seed_pharmacies():
     client = AsyncIOMotorClient(MONGO_URI)
@@ -16,9 +16,9 @@ async def seed_pharmacies():
     # Test Pharmacies in Nanded area (matching the app's default viewport)
     pharmacies = [
         {
-            "email": "owner1@sanjeevani.com",
-            "name": "Sanjeevani Central Owner",
-            "pharmacy_name": "Sanjeevani Central",
+            "email": "owner1@bugsentry.com",
+            "name": "BugSentry Central Owner",
+            "pharmacy_name": "BugSentry Central",
             "pharmacy_id": "PHARM_69ca9aee5b539eb0d62facd9",
             "global_role": "pharmacy_owner",
             "subscription_plan": "ultra",
@@ -28,7 +28,7 @@ async def seed_pharmacies():
             "address": "Opposite Railway Station, Nanded",
             "phone_number": "919876543210",
             "whatsapp": "919876543210",
-            "telegram": "sanjeevani_admin",
+            "telegram": "bugsentry_admin",
             "created_at": datetime.now(timezone.utc)
         },
         {

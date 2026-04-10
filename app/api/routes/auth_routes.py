@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse
 
 from app.auth.github_auth import exchange_code_for_token as gh_exchange, get_github_login_url, get_github_user
 from app.auth.gitlab_auth import exchange_code_for_token as gl_exchange, get_gitlab_login_url, get_gitlab_user
-from app.auth.google_auth import verify_google_token
+from app.auth.google_auth import exchange_code_for_token as google_exchange, get_google_login_url, get_google_user, verify_google_token
 from app.auth.token_service import issue_token
 from app.core.config import settings
 from app.core.security import get_current_user
@@ -101,6 +101,41 @@ async def gitlab_callback(request: Request, code: str, state: str):
 
 
 # ── Google ─────────────────────────────────────────────────────────────────
+
+@router.get("/google/login", summary="Redirect to Google OAuth")
+async def google_login(request: Request):
+    state = secrets.token_urlsafe(16)
+    request.session["oauth_state"] = state
+    redirect_uri = f"{_base_url(request)}/auth/google/callback"
+    return RedirectResponse(get_google_login_url(redirect_uri, state))
+
+
+@router.get("/google/callback", summary="Google OAuth callback")
+async def google_callback(request: Request, code: str, state: str):
+    if state != request.session.pop("oauth_state", None):
+        raise HTTPException(status_code=400, detail="Invalid OAuth state.")
+
+    redirect_uri = f"{_base_url(request)}/auth/google/callback"
+    token_data = google_exchange(code, redirect_uri)
+    g_user = get_google_user(token_data["access_token"])
+
+    email = g_user.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account has no email.")
+
+    db = get_db()
+    user = await upsert_user(
+        db,
+        email=email,
+        name=g_user.get("name"),
+        picture=g_user.get("picture"),
+        provider="google",
+    )
+
+    token_resp = issue_token(user["user_id"], "google")
+    query = urlencode({"token": token_resp.access_token})
+    return RedirectResponse(f"{settings.FRONTEND_URL}/?{query}")
+
 
 @router.post("/google", summary="Verify Google ID token", response_model=TokenResponse)
 async def google_auth(body: GoogleAuthRequest):
